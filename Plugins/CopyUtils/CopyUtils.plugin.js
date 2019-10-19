@@ -3,17 +3,17 @@
 class CopyUtils {
 	getName () {return "CopyUtils";}
 
-	getVersion () {return "0.0.2";}
+	getVersion () {return "0.0.3";}
 
 	getAuthor () {return "Montarex23";}
 
-	getDescription () {return "Allows you to copy channel link, name and topic.";}
+	getDescription () {return "Allows you to copy channel link, name and topic. You can copy someone's avatar URL too!";}
 	
 	getRawUrl () {return "https://raw.githubusercontent.com/polop2301/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js";}
 
 	constructor () {
 		this.changelog = {
-			"improved":[["Nothing","Just a test"]]
+			"improved":[["Copy someone's avatar URL","Click on someone with right mouse button, choose Copy and click Avatar URL!"]]
 		};
 
 		this.labels = {};
@@ -86,7 +86,7 @@ class CopyUtils {
 				className: `BDFDB-contextMenuItemGroup ${this.name}-contextMenuItemGroup`,
 				children: [
 					BDFDB.React.createElement(BDFDB.LibraryComponents.ContextMenuSubItem, {
-						label: this.labels.context_localchannelsettings_text,
+						label: this.labels.context_copy_text,
 						className: `BDFDB-contextMenuSubItem ${this.name}-contextMenuSubItem ${this.name}-channelsettings-contextMenuSubItem`,
 						render: [BDFDB.React.createElement(BDFDB.LibraryComponents.ContextMenuItemGroup, {
 							className: `BDFDB-contextMenuItemGroup ${this.name}-contextMenuItemGroup`,
@@ -98,8 +98,6 @@ class CopyUtils {
 										BDFDB.closeContextMenu(menu);
 										let channelidtocopy = instance.props.channel.id;
 										let guildidtocopy = instance.props.channel.guild_id;
-										console.log('topic:');
-										console.log(instance.props.channel.topic);
 										BDFDB.LibraryRequires.electron.clipboard.write({text:`https://discordapp.com/channels/${guildidtocopy}/${channelidtocopy}`});
 										BDFDB.showToast(this.labels.copy_link_success, {type:"success"});
 									}
@@ -140,29 +138,64 @@ class CopyUtils {
 			else children.push(itemgroup);
 		}
 	}
+	
+	onUserContextMenu (instance, menu, returnvalue) {
+		if (instance.props && instance.props.user && !menu.querySelector(`${this.name}-contextMenuSubItem`)) {
+			let [children, index] = BDFDB.getContextMenuGroupAndIndex(returnvalue, ["FluxContainer(MessageDeveloperModeGroup)", "DeveloperModeGroup"]);
+			const itemgroup = BDFDB.React.createElement(BDFDB.LibraryComponents.ContextMenuItemGroup, {
+				className: `BDFDB-contextMenuItemGroup ${this.name}-contextMenuItemGroup`,
+				children: [
+					BDFDB.React.createElement(BDFDB.LibraryComponents.ContextMenuSubItem, {
+						label: this.labels.context_copy_text,
+						className: `BDFDB-contextMenuSubItem ${this.name}-contextMenuSubItem ${this.name}-usersettings-contextMenuSubItem`,
+						render: [BDFDB.React.createElement(BDFDB.LibraryComponents.ContextMenuItemGroup, {
+							className: `BDFDB-contextMenuItemGroup ${this.name}-contextMenuItemGroup`,
+							children: [
+								BDFDB.React.createElement(BDFDB.LibraryComponents.ContextMenuItem, {
+									label: this.labels.submenu_useravatarurl_text,
+									className: `BDFDB-ContextMenuItem ${this.name}-ContextMenuItem ${this.name}-usersettings-ContextMenuItem`,
+									action: e => {
+										BDFDB.closeContextMenu(menu);
+										BDFDB.LibraryRequires.electron.clipboard.write({text:instance.props.user.avatarURL});
+										BDFDB.showToast(this.labels.copy_avatarurl_success, {type:"success"});
+									}
+								})
+							]
+						})]
+					})
+				]
+			});
+			if (index > -1) children.splice(index, 0, itemgroup);
+			else children.push(itemgroup);
+		}
+	}
 
 	setLabelsByLanguage () {
 		switch (BDFDB.getDiscordLanguage().id) {
 			case "pl":
 				return {
-					context_localchannelsettings_text:		"Kopiuj",
+					context_copy_text:						"Kopiuj",
 					submenu_copylink_text:					"Link",
 					submenu_copyname_text:					"Nazwę",
 					submenu_copytopic_text:					"Temat",
+					submenu_useravatarurl_text:				"Link do avataru",
 					copy_link_success:						"Link pomyślnie skopiowany",
 					copy_name_success:						"Nazwa pomyślnie skopiowana",
 					copy_topic_success:						"Temat pomyślnie skopiowany",
+					copy_avatarurl_success:					"Link do avataru pomyślnie skopiowany",
 					copy_topic_empty:						"Temat kanału jest pusty"
 				};
 			default:
 				return {
-					context_localchannelsettings_text:		"Copy",
+					context_copy_text:						"Copy",
 					submenu_copylink_text:					"Link",
 					submenu_copyname_text:					"Name",
 					submenu_copytopic_text:					"Topic",
+					submenu_useravatarurl_text:				"Avatar URL",
 					copy_link_success:						"Link copied successfully",
 					copy_name_success:						"Name copied successfully",
 					copy_topic_success:						"Topic copied successfully",
+					copy_avatarurl_success:					"Avatar URL copied successfully",
 					copy_topic_empty:						"Channel topic is empty"
 				};
 		}
