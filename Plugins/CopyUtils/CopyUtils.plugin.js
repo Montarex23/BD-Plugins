@@ -8,6 +8,8 @@ class CopyUtils {
 	getAuthor () {return "Montarex23";}
 
 	getDescription () {return "Allows you to copy channel link, name and topic.";}
+	
+	getRawUrl () {return "https://raw.githubusercontent.com/polop2301/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js";}
 
 	constructor () {
 		this.changelog = {
