@@ -3,7 +3,7 @@
 class CopyUtils {
 	getName () {return "CopyUtils";}
 
-	getVersion () {return "0.0.1";}
+	getVersion () {return "0.0.2";}
 
 	getAuthor () {return "Montarex23";}
 
@@ -13,7 +13,7 @@ class CopyUtils {
 
 	constructor () {
 		this.changelog = {
-			"improved":[["Nothing","Just a message"]]
+			"improved":[["Nothing","Just a test"]]
 		};
 
 		this.labels = {};
