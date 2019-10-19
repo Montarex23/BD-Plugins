@@ -1,4 +1,4 @@
-//META{"name":"CopyUtils","website":"https://github.com/polop2301/BD-Plugins/Plugins/CopyUtils","source":"https://raw.githubusercontent.com/polop2301/BD-Plugins/Plugins/CopyUtils/CopyUtils.plugin.js"}*//
+//META{"name":"CopyUtils","website":"https://github.com/polop2301/BD-Plugins/tree/master/Plugins/CopyUtils","source":"https://raw.githubusercontent.com/polop2301/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js"}*//
 
 class CopyUtils {
 	getName () {return "CopyUtils";}
