@@ -1,7 +1,10 @@
 # BD-Plugins
 Plugins for BetterDiscord
 
-<hr>
+---
 
-<h3>CopyUtils</h3>
+### CopyUtils
 Allows you to copy channel link, name and topic.
+
+### BetterNotes
+Displays first line of notes next to nickname.
