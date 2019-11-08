@@ -5,7 +5,7 @@ const { findModuleByProps: f, findModuleByDisplayName: fdm, monkeyPatch, showToa
 
 class CopyUtils {
 	getName() { return "CopyUtils" }
-	getVersion() { return "0.0.6" }
+	getVersion() { return "0.0.7" }
 	getAuthor() { return "Montarex23 & Juby210" }
 	getDescription() { return "Allows you to copy channel link, name and topic. You can copy someone's avatar URL too!" }
 	getRawUrl() { return "https://raw.githubusercontent.com/polop2301/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js" }
@@ -27,11 +27,12 @@ class CopyUtils {
 			submenu_copyname_text:					"Name",
 			submenu_copytopic_text:					"Topic",
 			submenu_useravatarurl_text:				"Avatar URL",
+			submenu_copy_mention_text:				"Mention",
 			copy_link_success:						"Link copied successfully",
 			copy_name_success:						"Name copied successfully",
 			copy_topic_success:						"Topic copied successfully",
 			copy_avatarurl_success:					"Avatar URL copied successfully",
-			copy_topic_empty:						"Channel topic is empty"
+			copy_mention_success:					"Mention copied successfully"
 		}
 
 		if(f('Messages').chosenLocale == "pl") {
@@ -41,11 +42,12 @@ class CopyUtils {
 				submenu_copyname_text:					"Nazwę",
 				submenu_copytopic_text:					"Temat",
 				submenu_useravatarurl_text:				"Link do avataru",
+				submenu_copy_mention_text:				"Wzmiankę",
 				copy_link_success:						"Link pomyślnie skopiowany",
 				copy_name_success:						"Nazwa pomyślnie skopiowana",
 				copy_topic_success:						"Temat pomyślnie skopiowany",
 				copy_avatarurl_success:					"Link do avataru pomyślnie skopiowany",
-				copy_topic_empty:						"Temat kanału jest pusty"
+				copy_mention_success:					"Wzmianka pomyślnie skopiowana"
 			}
 		}
 
@@ -73,16 +75,18 @@ class CopyUtils {
 							showToast(this.labels.copy_name_success, { type: 'success' })
 						}
 					}),
-					React.createElement(this.ContextMenuItem, {
+					b.thisObject.props.channel.topic ? React.createElement(this.ContextMenuItem, {
 						label: this.labels.submenu_copytopic_text,
 						action: () => {
-							let channeltopictocopy = b.thisObject.props.channel.topic
-							if (channeltopictocopy == "") {
-								showToast(this.labels.copy_topic_empty, { type: 'error' })
-								return
-							}
-							clipboard.write({ text: channeltopictocopy })
+							clipboard.write({ text: b.thisObject.props.channel.topic })
 							showToast(this.labels.copy_topic_success, { type: 'success' })
+						}
+					}) : null,
+					React.createElement(this.ContextMenuItem, {
+						label: this.labels.submenu_copy_mention_text,
+						action: () => {
+							clipboard.write({ text: '<#' + b.thisObject.props.channel.id + '>' })
+							showToast(this.labels.copy_mention_success, { type: 'success' })
 						}
 					})
 				]
@@ -93,11 +97,18 @@ class CopyUtils {
 			b.returnValue.props.children.props.children.props.children.push(React.createElement(fdm('FluxContainer(SubMenuItem)'), {
 				label: this.labels.context_copy_text,
 				render: [
-					React.createElement(this.ContextMenuItem, {
+					b.thisObject.props.user.avatar ? React.createElement(this.ContextMenuItem, {
 						label: this.labels.submenu_useravatarurl_text,
 						action: () => {
-							clipboard.write({ text: b.thisObject.props.user.avatarURL })
+							clipboard.write({ text: b.thisObject.props.user.avatarURL.replace('size=128', 'size=2048') })
 							showToast(this.labels.copy_avatarurl_success, { type: 'success' })
+						}
+					}) : null,
+					React.createElement(this.ContextMenuItem, {
+						label: this.labels.submenu_copy_mention_text,
+						action: () => {
+							clipboard.write({ text: '<@' + b.thisObject.props.user.id + '>' })
+							showToast(this.labels.copy_mention_success, { type: 'success' })
 						}
 					})
 				]
