@@ -118,6 +118,23 @@ class CopyUtils {
 		if(global.ZeresPluginLibrary) {
 			ZeresPluginLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), this.getRawUrl())
 		}
+		
+		this.ContextMenuItem = class extends React.Component {
+			render() {
+				const c = f('contextMenu')
+				return React.createElement(fdm('Clickable'), {
+					className: c.item + " " + c.clickable,
+					role: 'menuitem',
+					onClick: typeof this.props.action != 'function' ? null : this.props.action,
+					children: [
+						React.createElement('div', {
+							className: c.label,
+							children: this.props.label
+						}), this.props.children
+					]
+				})
+			}
+		}	
 	}
 
 	stop () {
@@ -137,20 +154,5 @@ class CopyUtils {
 		}
 	}
 
-	ContextMenuItem = class extends React.Component {
-		render() {
-			const c = f('contextMenu')
-			return React.createElement(fdm('Clickable'), {
-				className: c.item + " " + c.clickable,
-				role: 'menuitem',
-				onClick: typeof this.props.action != 'function' ? null : this.props.action,
-				children: [
-					React.createElement('div', {
-						className: c.label,
-						children: this.props.label
-					}), this.props.children
-				]
-			})
-		}
-	}
+	
 }
