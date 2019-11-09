@@ -5,7 +5,7 @@ const { findModuleByProps: f, findModuleByDisplayName: fdm, monkeyPatch, showToa
 
 class CopyUtils {
 	getName() { return "CopyUtils" }
-	getVersion() { return "0.0.7" }
+	getVersion() { return "0.0.8" }
 	getAuthor() { return "Montarex23 & Juby210" }
 	getDescription() { return "Allows you to copy channel link, name and topic. You can copy someone's avatar URL too!" }
 	getRawUrl() { return "https://raw.githubusercontent.com/polop2301/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js" }
