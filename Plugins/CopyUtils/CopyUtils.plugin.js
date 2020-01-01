@@ -5,7 +5,7 @@ const { findModuleByProps: f, findModuleByDisplayName: fdm, monkeyPatch, showToa
 
 class CopyUtils {
 	getName() { return "CopyUtils" }
-	getVersion() { return "0.0.8" }
+	getVersion() { return "0.0.9" }
 	getAuthor() { return "Montarex23 & Juby210" }
 	getDescription() { return "Allows you to copy channel link, name and topic. You can copy someone's avatar URL too!" }
 	getRawUrl() { return "https://raw.githubusercontent.com/polop2301/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js" }
@@ -17,8 +17,6 @@ class CopyUtils {
 		ReactDOM.render(el, set)
 		return set
 	}
-
-	load () {}
 
 	start () {
 		this.labels = {
@@ -51,68 +49,71 @@ class CopyUtils {
 			}
 		}
 
-		this.unpatch = monkeyPatch(fdm('ChannelContextMenu').prototype, 'render', { after: b => {
-			b.returnValue.props.children.push(React.createElement(fdm('FluxContainer(SubMenuItem)'), {
-				label: this.labels.context_copy_text,
-				render: [
-					React.createElement(this.ContextMenuItem, {
-						label: this.labels.submenu_copylink_text,
-						action: () => {
-							let channelidtocopy = b.thisObject.props.channel.id
-							let guildidtocopy = b.thisObject.props.channel.guild_id
-							clipboard.write({ text: `https://discordapp.com/channels/${guildidtocopy}/${channelidtocopy}` })
-							showToast(this.labels.copy_link_success, { type: 'success' })
-						}
-					}),
-					React.createElement(this.ContextMenuItem, {
-						label: this.labels.submenu_copyname_text,
-						action: () => {
-							let channelnametocopy = b.thisObject.props.channel.name
-							if (this.loadData('spacesInsteadOfDashes')) {
-								channelnametocopy = channelnametocopy.replace(/-/g, ' ')
+		// ChannelMarkReadItem because other items doesn't has render in prototype
+		this.unpatch = monkeyPatch(fdm('ChannelMarkReadItem').prototype, 'render', { after: b => {
+			const c = f('getChannel').getChannel(b.thisObject.props.channelId)
+			b.returnValue = React.createElement('div', { children: [ b.returnValue,
+				React.createElement(fdm('FluxContainer(SubMenuItem)'), { label: this.labels.context_copy_text,
+					render: [
+						React.createElement(this.ContextMenuItem, {
+							label: this.labels.submenu_copylink_text,
+							action: () => {
+								clipboard.write({ text: `https://discordapp.com/channels/${c.guild_id}/${c.id}` })
+								showToast(this.labels.copy_link_success, { type: 'success' })
 							}
-							clipboard.write({ text: channelnametocopy })
-							showToast(this.labels.copy_name_success, { type: 'success' })
-						}
-					}),
-					b.thisObject.props.channel.topic ? React.createElement(this.ContextMenuItem, {
-						label: this.labels.submenu_copytopic_text,
-						action: () => {
-							clipboard.write({ text: b.thisObject.props.channel.topic })
-							showToast(this.labels.copy_topic_success, { type: 'success' })
-						}
-					}) : null,
-					React.createElement(this.ContextMenuItem, {
-						label: this.labels.submenu_copy_mention_text,
-						action: () => {
-							clipboard.write({ text: '<#' + b.thisObject.props.channel.id + '>' })
-							showToast(this.labels.copy_mention_success, { type: 'success' })
-						}
-					})
-				]
-			}))
+						}),
+						React.createElement(this.ContextMenuItem, {
+							label: this.labels.submenu_copyname_text,
+							action: () => {
+								let name = c.name
+								if (this.loadData('spacesInsteadOfDashes')) {
+									name = name.replace(/-/g, ' ')
+								}
+								clipboard.write({ text: name })
+								showToast(this.labels.copy_name_success, { type: 'success' })
+							}
+						}),
+						c.topic ? React.createElement(this.ContextMenuItem, {
+							label: this.labels.submenu_copytopic_text,
+							action: () => {
+								clipboard.write({ text: c.topic })
+								showToast(this.labels.copy_topic_success, { type: 'success' })
+							}
+						}) : null,
+						React.createElement(this.ContextMenuItem, {
+							label: this.labels.submenu_copy_mention_text,
+							action: () => {
+								clipboard.write({ text: '<#' + c.id + '>' })
+								showToast(this.labels.copy_mention_success, { type: 'success' })
+							}
+						})
+					]
+				})
+			]})
 		}})
 
-		this.unpatch2 = monkeyPatch(fdm('UserContextMenu').prototype, 'render', { after: b => {
-			b.returnValue.props.children.props.children.props.children.push(React.createElement(fdm('FluxContainer(SubMenuItem)'), {
-				label: this.labels.context_copy_text,
-				render: [
-					b.thisObject.props.user.avatar ? React.createElement(this.ContextMenuItem, {
-						label: this.labels.submenu_useravatarurl_text,
-						action: () => {
-							clipboard.write({ text: b.thisObject.props.user.avatarURL.replace('size=128', 'size=2048') })
-							showToast(this.labels.copy_avatarurl_success, { type: 'success' })
-						}
-					}) : null,
-					React.createElement(this.ContextMenuItem, {
-						label: this.labels.submenu_copy_mention_text,
-						action: () => {
-							clipboard.write({ text: '<@' + b.thisObject.props.user.id + '>' })
-							showToast(this.labels.copy_mention_success, { type: 'success' })
-						}
-					})
-				]
-			}))
+		this.unpatch2 = monkeyPatch(fdm('UserCallItem').prototype, 'render', { after: b => {
+			const u = f('getUser', 'getCurrentUser').getUser(b.thisObject.props.userId)
+			b.returnValue = React.createElement('div', { children: [ b.returnValue,
+				React.createElement(fdm('FluxContainer(SubMenuItem)'), { label: this.labels.context_copy_text,
+					render: [
+						u.avatar ? React.createElement(this.ContextMenuItem, {
+							label: this.labels.submenu_useravatarurl_text,
+							action: () => {
+								clipboard.write({ text: u.avatarURL.replace('size=128', 'size=2048') })
+								showToast(this.labels.copy_avatarurl_success, { type: 'success' })
+							}
+						}) : null,
+						React.createElement(this.ContextMenuItem, {
+							label: this.labels.submenu_copy_mention_text,
+							action: () => {
+								clipboard.write({ text: '<@' + u.id + '>' })
+								showToast(this.labels.copy_mention_success, { type: 'success' })
+							}
+						})
+					]
+				})
+			]})
 		}})
 
 		if(global.ZeresPluginLibrary) {
@@ -153,6 +154,4 @@ class CopyUtils {
 			node.forceUpdate()
 		}
 	}
-
-	
 }
