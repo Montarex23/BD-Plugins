@@ -1,14 +1,14 @@
-//META{"name":"CopyUtils","website":"https://github.com/polop2301/BD-Plugins/tree/master/Plugins/CopyUtils","source":"https://raw.githubusercontent.com/polop2301/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js"}*//
+//META{"name":"CopyUtils","website":"https://github.com/Montarex23/BD-Plugins/tree/master/Plugins/CopyUtils","source":"https://raw.githubusercontent.com/Montarex23/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js"}*//
 
 const { clipboard } = require('electron')
-const { findModuleByProps: f, findModuleByDisplayName: fdm, monkeyPatch, showToast, React, ReactDOM } = BdApi
+const { findAllModules: fa, findModule: fm, findModuleByDisplayName: fdm, monkeyPatch, showToast, React, ReactDOM } = BdApi
 
 class CopyUtils {
 	getName() { return "CopyUtils" }
-	getVersion() { return "1.0.0" }
+	getVersion() { return "1.0.1" }
 	getAuthor() { return "Montarex23 & Juby210" }
 	getDescription() { return "Allows you to copy useful things." }
-	getRawUrl() { return "https://raw.githubusercontent.com/polop2301/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js" }
+	getRawUrl() { return "https://raw.githubusercontent.com/Montarex23/BD-Plugins/master/Plugins/CopyUtils/CopyUtils.plugin.js" }
 
 	getSettingsPanel () {
 		let set = document.createElement('div')
@@ -29,18 +29,17 @@ class CopyUtils {
 			mention:   "Mention",
 			tag:       "Tag",
 			iconURL:   "Icon URL",
+			dmID:      "DM Channel ID",
 
 			copy_success: "Copied"
 		}
 
 		// Discord Modules
-		const { getChannel } = f('getChannel')
-		const { getUser } = f('getUser', 'getCurrentUser')
-		const { getGuild } = f('getGuild')
-		const { chosenLocale } = f('Messages')
-		const cmc = f('contextMenu') // Context Menu Classes
+		const { chosenLocale } = fm(m => m.Messages)
+		const { API_HOST } = fm(m => m.API_HOST)
+		const { MenuItem } = fm(m => m.MenuGroup && m.MenuItem)
 
-		if(chosenLocale == "pl") {
+		if (chosenLocale == "pl") {
 			this.labels = Object.assign(this.labels, {
 				copy:      "Kopiuj",
 				name:      "Nazwę",
@@ -48,122 +47,99 @@ class CopyUtils {
 				avatarURL: "Link do avataru",
 				mention:   "Wzmiankę",
 				iconURL:   "Link do ikony",
+				dmID:      "ID Kanału DM",
 
 				copy_success: "Skopiowano"
 			})
 		}
 
-		// Channel Context Menu
-		// ChannelMarkReadItem because other items doesn't has render in prototype
-		this.unpatch.push(monkeyPatch(fdm('ChannelMarkReadItem').prototype, 'render', { after: b => {
-			const c = getChannel(b.thisObject.props.channelId)
-			b.returnValue = React.createElement('div', { children: [ b.returnValue, this.SubMenu([
-				React.createElement(this.ContextMenuItem, {
-					label: this.labels.link,
-					action: () => {
-						clipboard.write({ text: `https://discordapp.com/channels/${c.guild_id}/${c.id}` })
-						this.showCopyToast()
-					}
-				}),
-				React.createElement(this.ContextMenuItem, {
-					label: this.labels.name,
-					action: () => {
-						let name = c.name
-						if (this.loadData('spacesInsteadOfDashes')) {
-							name = name.replace(/-/g, ' ')
-						}
-						clipboard.write({ text: name })
-						this.showCopyToast()
-					}
-				}),
-				c.topic ? React.createElement(this.ContextMenuItem, {
-					label: this.labels.topic,
-					action: () => {
-						clipboard.write({ text: c.topic })
-						this.showCopyToast()
-					}
-				}) : null,
-				React.createElement(this.ContextMenuItem, {
-					label: this.labels.mention,
-					action: () => {
-						clipboard.write({ text: '<#' + c.id + '>' })
-						this.showCopyToast()
-					}
-				})
-			])]})
-		}}))
+		// Channel Context Menu(s)
+		const channelComponents = ['ChannelListTextChannelContextMenu', 'ChannelListVoiceChannelContextMenu', 'GroupDMContextMenu']
+		channelComponents.forEach(displayName => {
+			fa(m => m.default && m.default.displayName == displayName).forEach(m => {
+				this.unpatch.push(monkeyPatch(m, 'default', { after: b => {
+					const c = b.methodArguments[0].channel
+					b.returnValue.props.children.push(React.createElement(MenuItem, {
+						id: 'copy-utils',
+						label: this.labels.copy
+					}, React.createElement(MenuItem, {
+						action: () => this.copy(`https://${API_HOST}/channels/${c.guild_id || '@me'}/${c.id}`),
+						id: 'cu-link',
+						label: this.labels.link
+					}), React.createElement(MenuItem, {
+						action: () => this.copy(this.loadData('spacesInsteadOfDashes') ? c.name.replace(/-/g, ' ') : c.name),
+						id: 'cu-name',
+						label: this.labels.name
+					}), c.topic ? React.createElement(MenuItem, {
+						action: () => this.copy(c.topic),
+						id: 'cu-topic',
+						label: this.labels.topic
+					}) : null, React.createElement(MenuItem, {
+						action: () => this.copy(`<#${c.id}>`),
+						id: 'cu-mention',
+						label: this.labels.mention
+					})))
+				}}))
+				m.default.displayName = displayName
+			})
+		})
 
-		// User Context Menu
-		this.unpatch.push(monkeyPatch(fdm('UserCallItem').prototype, 'render', { after: b => {
-			const u = getUser(b.thisObject.props.userId)
-			b.returnValue = React.createElement('div', { children: [ b.returnValue, this.SubMenu([
-				u.avatar ? React.createElement(this.ContextMenuItem, {
-					label: this.labels.avatarURL,
-					action: () => {
-						clipboard.write({ text: u.avatarURL.replace('size=128', 'size=2048') })
-						this.showCopyToast()
-					}
-				}) : null,
-				React.createElement(this.ContextMenuItem, {
-					label: this.labels.mention,
-					action: () => {
-						clipboard.write({ text: '<@' + u.id + '>' })
-						this.showCopyToast()
-					}
-				}),
-				React.createElement(this.ContextMenuItem, {
-					label: this.labels.tag,
-					action: () => {
-						clipboard.write({ text: u.tag })
-						this.showCopyToast()
-					}
-				})
-			])]})
-		}}))
+		// User Context Menu(s)
+		const userComponents = ['DMUserContextMenu', 'GroupDMUserContextMenu', 'GuildChannelUserContextMenu']
+		userComponents.forEach(displayName => {
+			const m = fm(m => m.default && m.default.displayName == displayName)
+			this.unpatch.push(monkeyPatch(m, 'default', { after: b => {
+				const u = b.methodArguments[0].user
+				b.returnValue.props.children.props.children.push(React.createElement(MenuItem, {
+					id: 'copy-utils',
+					label: this.labels.copy
+				}, u.avatar ? React.createElement(MenuItem, {
+					action: () => this.copy(u.avatarURL.replace('size=128', 'size=2048')),
+					id: 'cu-avatar',
+					label: this.labels.avatarURL
+				}) : null, React.createElement(MenuItem, {
+					action: () => this.copy(`<@${u.id}>`),
+					id: 'cu-mention',
+					label: this.labels.mention
+				}), React.createElement(MenuItem, {
+					action: () => this.copy(u.tag),
+					id: 'cu-tag',
+					label: this.labels.tag
+				}), displayName == 'DMUserContextMenu' ? React.createElement(MenuItem, {
+					action: () => this.copy(b.methodArguments[0].channel.id),
+					id: 'cu-dmid',
+					label: this.labels.dmID
+				}) : null))
+			}}))
+			m.default.displayName = displayName
+		})
 
 		// Guild Context Menu
-		this.unpatch.push(monkeyPatch(fdm('GuildPrivacySettingsItem').prototype, 'render', { after: b => {
-			const g = getGuild(b.thisObject.props.guildId)
-			b.returnValue = React.createElement('div', { children: [ b.returnValue, this.SubMenu([
-				g.icon ? React.createElement(this.ContextMenuItem, {
-					label: this.labels.iconURL,
-					action: () => {
-						clipboard.write({ text: g.getIconURL('png').replace('size=128', 'size=2048') })
-						this.showCopyToast()
-					}
-				}) : null,
-				React.createElement(this.ContextMenuItem, {
-					label: this.labels.name,
-					action: () => {
-						clipboard.write({ text: g.name })
-						this.showCopyToast()
-					}
-				})
-			])]})
+		const GuildContextMenu = fm(m => m.default && m.default.displayName == 'GuildContextMenu')
+		this.unpatch.push(monkeyPatch(GuildContextMenu, 'default', { after: b => {
+			const g = b.methodArguments[0].guild
+			b.returnValue.props.children.push(React.createElement(MenuItem, {
+				id: 'copy-utils',
+				label: this.labels.copy
+			}, g.icon ? React.createElement(MenuItem, {
+				action: () => this.copy(g.getIconURL('png').replace('size=128', 'size=2048')),
+				id: 'cu-icon',
+				label: this.labels.iconURL
+			}) : null, React.createElement(MenuItem, {
+				action: () => this.copy(g.name),
+				id: 'cu-name',
+				label: this.labels.name
+			})))
 		}}))
+		GuildContextMenu.default.displayName = 'GuildContextMenu'
 
-		if(global.ZeresPluginLibrary) {
-			ZeresPluginLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), this.getRawUrl())
-		}
-		
-		this.SubMenu = render => {
-			return React.createElement(fdm('FluxContainer(SubMenuItem)'), { label: this.labels.copy, render })
-		}
-		this.ContextMenuItem = class extends React.Component {
-			render() {
-				return React.createElement(fdm('Clickable'), {
-					className: cmc.item + " " + cmc.clickable,
-					role: 'menuitem',
-					onClick: typeof this.props.action != 'function' ? null : this.props.action,
-					children: [
-						React.createElement('div', {
-							className: cmc.label,
-							children: this.props.label
-						}), this.props.children
-					]
-				})
-			}
-		}	
+        if (window.ZeresPluginLibrary) {
+            window.ZeresPluginLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), this.getRawUrl())
+        } else if (window.BDFDB) {
+            if (!window.PluginUpdates) window.PluginUpdates = { plugins: {} }
+            window.PluginUpdates.plugins[this.getRawUrl()] = { name: this.getName(), raw: this.getRawUrl(), version: this.getVersion() }
+            window.BDFDB.PluginUtils.checkUpdate(this.getName(), this.getRawUrl())
+        }
 	}
 
 	stop () {
@@ -182,6 +158,10 @@ class CopyUtils {
 		}
 	}
 
+	copy(text) {
+		clipboard.write({ text })
+		this.showCopyToast()
+	}
 	showCopyToast() {
 		showToast(this.labels.copy_success, { type: 'success' })
 	}
